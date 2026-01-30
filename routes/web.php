@@ -1,59 +1,188 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
+
 use App\Http\Controllers\KategoriSampahController;
-use App\Http\Controllers\SetoranSampahController;
 use App\Http\Controllers\MasterKategoriSampahController;
+
+use App\Http\Controllers\SetoranSampahController;
+use App\Http\Controllers\PetugasSetoranController;
+use App\Http\Controllers\AdminSetoranController;
+use App\Http\Controllers\AdminDashboardController;
+
+/*
+|--------------------------------------------------------------------------
+| ROOT
+|--------------------------------------------------------------------------
+*/
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
 });
 
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD (AUTO REDIRECT BY ROLE)
+|--------------------------------------------------------------------------
+*/
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $user = auth()->user();
+    $role = $user->role ?? null;
+
+    if ($role === 'admin')   return redirect()->route('admin.dashboard');
+    if ($role === 'petugas') return redirect()->route('petugas.setoran.index');
+
+    return redirect()->route('user.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+/*
+|--------------------------------------------------------------------------
+| PROFILE (ALL AUTH)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
 
+/*
+|--------------------------------------------------------------------------
+| USER ROUTES
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:user'])
+    ->prefix('user')
+    ->as('user.')
+    ->group(function () {
 
-//KategoriSampah (Admin only)
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    // Index
-    Route::get('/kategori-sampah', [KategoriSampahController::class, 'index'])
-        ->name('kategori_sampah.index');
+        Route::get('/dashboard', [SetoranSampahController::class, 'dashboard'])
+            ->name('dashboard');
 
-    // CREATE
-    Route::get('/kategori-sampah/create', [KategoriSampahController::class, 'create'])
-        ->name('kategori_sampah.create');
+        Route::get('/setoran', [SetoranSampahController::class, 'index'])
+            ->name('setoran.index');
 
-    Route::post('/kategori-sampah', [KategoriSampahController::class, 'store'])
-        ->name('kategori_sampah.store');
+        Route::get('/setoran/create', [SetoranSampahController::class, 'create'])
+            ->name('setoran.create');
 
-    // SHOW (detail)
-    Route::get('/kategori-sampah/{id}', [KategoriSampahController::class, 'show'])
-        ->name('kategori_sampah.show');
+        Route::post('/setoran', [SetoranSampahController::class, 'store'])
+            ->name('setoran.store');
 
-    // EDIT
-    Route::get('/kategori-sampah/{id}/edit', [KategoriSampahController::class, 'edit'])
-        ->name('kategori_sampah.edit');
+        Route::get('/setoran/{id}', [SetoranSampahController::class, 'show'])
+            ->name('setoran.show');
 
-    Route::put('/kategori-sampah/{id}', [KategoriSampahController::class, 'update'])
-        ->name('kategori_sampah.update');
+        Route::get('/setoran/{id}/petugas-location', [SetoranSampahController::class, 'petugasLocation'])
+            ->name('setoran.petugas_location');
 
-    // DELETE
-    Route::delete('/kategori-sampah/{id}', [KategoriSampahController::class, 'destroy'])
-        ->name('kategori_sampah.destroy');
-});
+        Route::get('/peta', [SetoranSampahController::class, 'mapUser'])
+            ->name('map');
 
+        Route::get('/peta/data', [SetoranSampahController::class, 'mapUserData'])
+            ->name('map.data');
+    });
 
-    // Master Kategori (Admin only)
-    Route::middleware(['auth', 'role:admin'])->group(function () {
+/*
+|--------------------------------------------------------------------------
+| PETUGAS ROUTES
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:petugas'])
+    ->prefix('petugas')
+    ->as('petugas.')
+    ->group(function () {
+
+        Route::get('/setoran', [PetugasSetoranController::class, 'index'])
+            ->name('setoran.index');
+
+        Route::get('/setoran/{id}', [PetugasSetoranController::class, 'show'])
+            ->name('setoran.show');
+
+        Route::post('/setoran/{id}/ambil', [PetugasSetoranController::class, 'ambil'])
+            ->name('setoran.ambil');
+
+        Route::post('/setoran/{id}/status', [PetugasSetoranController::class, 'updateStatus'])
+            ->name('setoran.status');
+
+        Route::post('/setoran/{id}/lokasi', [PetugasSetoranController::class, 'updateLocation'])
+            ->name('setoran.lokasi');
+
+        Route::get('/peta', [PetugasSetoranController::class, 'map'])
+            ->name('map');
+
+        Route::get('/peta/data', [PetugasSetoranController::class, 'mapData'])
+            ->name('map.data');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN ROUTES (nama route pakai admin.* untuk dashboard/setoran/map)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->as('admin.')
+    ->group(function () {
+
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        Route::get('/setoran', [AdminSetoranController::class, 'index'])
+            ->name('setoran.index');
+
+        Route::get('/setoran/{id}', [AdminSetoranController::class, 'show'])
+            ->name('setoran.show');
+
+        Route::get('/setoran/{id}/petugas-location', [AdminSetoranController::class, 'petugasLocation'])
+            ->name('setoran.petugas_location');
+
+        Route::get('/peta', [AdminSetoranController::class, 'mapAdmin'])
+            ->name('map');
+
+        Route::get('/peta/data', [AdminSetoranController::class, 'mapAdminData'])
+            ->name('map.data');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN MASTER DATA ROUTES
+|--------------------------------------------------------------------------
+| ✅ URL tetap /admin/...
+| ✅ Tapi NAMA ROUTE tetap seperti view kamu:
+| - master_kategori_sampah.*
+| - kategori_sampah.*
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->group(function () {
+
+        // Kategori Sampah (nama route tetap kategori_sampah.*)
+        Route::get('/kategori-sampah', [KategoriSampahController::class, 'index'])
+            ->name('kategori_sampah.index');
+
+        Route::get('/kategori-sampah/create', [KategoriSampahController::class, 'create'])
+            ->name('kategori_sampah.create');
+
+        Route::post('/kategori-sampah', [KategoriSampahController::class, 'store'])
+            ->name('kategori_sampah.store');
+
+        Route::get('/kategori-sampah/{id}', [KategoriSampahController::class, 'show'])
+            ->name('kategori_sampah.show');
+
+        Route::get('/kategori-sampah/{id}/edit', [KategoriSampahController::class, 'edit'])
+            ->name('kategori_sampah.edit');
+
+        Route::put('/kategori-sampah/{id}', [KategoriSampahController::class, 'update'])
+            ->name('kategori_sampah.update');
+
+        Route::delete('/kategori-sampah/{id}', [KategoriSampahController::class, 'destroy'])
+            ->name('kategori_sampah.destroy');
+
+        // Master Kategori (nama route tetap master_kategori_sampah.*)
         Route::get('/master-kategori-sampah', [MasterKategoriSampahController::class, 'index'])
             ->name('master_kategori_sampah.index');
 
@@ -72,58 +201,3 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::delete('/master-kategori-sampah/{id}', [MasterKategoriSampahController::class, 'destroy'])
             ->name('master_kategori_sampah.destroy');
     });
-//Setoran Sampah
-
-// USER - MAP SEMUA TITIK JEMPUT (milik user)
-Route::middleware(['auth', 'role:user'])->group(function () {
-    Route::get('/user/peta', [\App\Http\Controllers\SetoranSampahController::class, 'mapUser'])
-        ->name('user.map');
-
-    Route::get('/user/peta/data', [\App\Http\Controllers\SetoranSampahController::class, 'mapUserData'])
-        ->name('user.map.data');
-});
-
-// ADMIN - MAP SEMUA TITIK JEMPUT
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin/peta', [\App\Http\Controllers\AdminSetoranController::class, 'mapAdmin'])
-        ->name('admin.map');
-
-    Route::get('/admin/peta/data', [\App\Http\Controllers\AdminSetoranController::class, 'mapAdminData'])
-        ->name('admin.map.data');
-});
-
-
-use App\Http\Controllers\PetugasSetoranController;
-use App\Http\Controllers\AdminSetoranController;
-
-// USER Routes
-Route::middleware(['auth', 'role:user'])->group(function () {
-    Route::get('/user/dashboard', [SetoranSampahController::class, 'dashboard'])->name('user.dashboard');
-    Route::get('/user/setoran', [SetoranSampahController::class, 'index'])->name('user.setoran.index');
-    Route::get('/user/setoran/create', [SetoranSampahController::class, 'create'])->name('user.setoran.create');
-    Route::post('/user/setoran', [SetoranSampahController::class, 'store'])->name('user.setoran.store');
-    Route::get('/user/setoran/{id}', [SetoranSampahController::class, 'show'])->name('user.setoran.show');
-    Route::get('/user/setoran/{id}/petugas-location', [SetoranSampahController::class, 'petugasLocation'])->name('user.setoran.petugas_location');
-});
-
-// PETUGAS Routes
-Route::middleware(['auth', 'role:petugas'])->group(function () {
-    Route::get('/petugas/setoran', [PetugasSetoranController::class, 'index'])->name('petugas.setoran.index');
-    Route::get('/petugas/setoran/{id}', [PetugasSetoranController::class, 'show'])->name('petugas.setoran.show');
-    Route::post('/petugas/setoran/{id}/ambil', [PetugasSetoranController::class, 'ambil'])->name('petugas.setoran.ambil');
-    Route::post('/petugas/setoran/{id}/status', [PetugasSetoranController::class, 'updateStatus'])->name('petugas.setoran.status');
-    Route::post('/petugas/setoran/{id}/lokasi', [PetugasSetoranController::class, 'updateLocation'])->name('petugas.setoran.lokasi');
-    Route::get('/petugas/peta', [PetugasSetoranController::class, 'map'])->name('petugas.map');
-    Route::get('/petugas/peta/data', [PetugasSetoranController::class, 'mapData'])->name('petugas.map.data');
-});
-
-// ADMIN Routes
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin/setoran', [AdminSetoranController::class, 'index'])->name('admin.setoran.index');
-    Route::get('/admin/setoran/{id}', [AdminSetoranController::class, 'show'])->name('admin.setoran.show');
-    Route::get('/admin/setoran/{id}/petugas-location', [AdminSetoranController::class, 'petugasLocation'])->name('admin.setoran.petugas_location');
-});
-
-
-
-

@@ -1,100 +1,331 @@
 @extends('layouts.user')
-
 @section('title', 'Peta Titik Jemput Saya')
 
 @push('styles')
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
 <style>
-  .page-title{
-    display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;
-    margin: 6px 0 14px;
-  }
-  .page-title h2{margin:0;font-size:18px;font-weight:1000}
-  .page-title p{margin:6px 0 0;color:var(--muted);font-weight:800;font-size:13px}
+  :root{
+    --brand:#10b981;
+    --brand-dark:#059669;
+    --brand-soft:#ecfdf5;
 
-  .box{
+    --bg:#f9fafb;
+    --card:#ffffff;
+    --ink:#111827;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+
+    --shadow-sm: 0 6px 18px rgba(15, 23, 42, 0.06);
+    --shadow:    0 12px 34px rgba(0,0,0,.10);
+
+    --radius:16px;
+  }
+
+  body, .page, input, select, textarea, button, a{
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+
+  .container-fluid{
+    width:100%;
+    max-width:100%;
+    margin:0 auto;
+    padding-left:16px;
+    padding-right:16px;
+  }
+  @media (min-width:768px){
+    .container-fluid{ padding-left:24px; padding-right:24px; }
+  }
+
+  /* ===== HEADER ===== */
+  .page-header{
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+    padding: 18px 0 16px;
+    color:#fff;
+    margin-bottom: 14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .page-header::before{
+    content:"";
+    position:absolute;
+    inset:-90px -140px auto auto;
+    width:340px;height:340px;
+    background:rgba(255,255,255,.14);
+    border-radius:999px;
+    transform: rotate(18deg);
+  }
+  .page-header::after{
+    content:"";
+    position:absolute;
+    inset:auto auto -140px -140px;
+    width:300px;height:300px;
+    background:rgba(0,0,0,.08);
+    border-radius:999px;
+  }
+  .header-inner{
+    position:relative;
+    border-radius: var(--radius);
+    padding: 18px;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.18);
+    box-shadow: 0 12px 30px rgba(0,0,0,.10);
+    backdrop-filter: blur(10px);
+  }
+  @media (min-width:768px){
+    .header-inner{ padding:22px; }
+  }
+  .title{
+    margin:0;
+    font-size: 1.35rem;
+    font-weight: 900;
+    letter-spacing:.2px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .subtitle{
+    margin:6px 0 0;
+    font-size:.95rem;
+    opacity:.95;
+    max-width: 900px;
+  }
+
+  /* ===== CARD ===== */
+  .page{ padding-bottom: 18px; }
+  .card{
     background: var(--card);
-    border: 1px solid rgba(34,197,94,.14);
-    border-radius: 22px;
-    box-shadow: 0 16px 48px rgba(2,44,24,.08);
-    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow:hidden;
+  }
+  .card-head{
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    background:#fff;
+  }
+  .muted{ color: var(--muted); font-size:.875rem; font-weight:800; }
+
+  .actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
   }
 
+  .content{ padding: 16px; }
+
+  /* ===== BUTTON ===== */
+  .btnx{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:10px 14px;
+    border-radius: 12px;
+    border:1px solid var(--line);
+    background:#fff;
+    color: var(--ink);
+    text-decoration:none;
+    cursor:pointer;
+    font-size:.875rem;
+    font-weight:900;
+    box-shadow: var(--shadow-sm);
+    transition:.2s;
+    line-height:1;
+    white-space:nowrap;
+  }
+  .btnx:hover{
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+    border-color: rgba(16,185,129,.45);
+  }
+  .btnx-primary{
+    background: var(--brand);
+    border-color: var(--brand);
+    color:#fff;
+  }
+  .btnx-primary:hover{
+    background: var(--brand-dark);
+    border-color: var(--brand-dark);
+  }
+  .btnx-soft{
+    background: var(--brand-soft);
+    border-color: rgba(16,185,129,.22);
+    color:#065f46;
+  }
+
+  /* ===== TOOLBAR ===== */
   .toolbar{
-    display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
     margin-bottom: 12px;
   }
-  .muted{color:var(--muted);font-size:13px;font-weight:800}
+  .toolbar-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .info-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(16,185,129,.20);
+    background: var(--brand-soft);
+    color:#065f46;
+    font-weight:900;
+    font-size:.85rem;
+  }
 
-  select{
-    padding:10px 12px;border-radius:14px;
-    border:1px solid rgba(2,44,24,.14);
-    background: rgba(255,255,255,.90);
+  .toolbar-right{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .selectx{
+    padding:10px 12px;
+    border-radius: 12px;
+    border:1px solid var(--line);
+    background:#fff;
     font-weight:900;
     outline:none;
+    min-width: 200px;
+  }
+  .selectx:focus{
+    border-color: rgba(16,185,129,.45);
+    box-shadow: 0 0 0 3px rgba(16,185,129,.12);
   }
 
+  /* ===== MAP ===== */
   #map{
     height: 600px;
-    border: 1px solid rgba(2,44,24,.12);
-    border-radius: 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     overflow:hidden;
-    background: rgba(255,255,255,.9);
+    background:#fff;
+    box-shadow: 0 10px 24px rgba(0,0,0,.06);
   }
 
-  .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-  .chip{
-    padding:8px 10px;border-radius:999px;
-    border:1px solid rgba(2,44,24,.12);
-    background: rgba(255,255,255,.88);
-    font-weight:900;display:flex;align-items:center;gap:8px;
+  /* ===== LEGEND ===== */
+  .legend{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top: 12px;
   }
-  .dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+  .chip{
+    padding:8px 10px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:#fff;
+    font-weight:900;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color: var(--ink);
+    box-shadow: 0 6px 16px rgba(15,23,42,.05);
+  }
+  .dot{ width:10px;height:10px;border-radius:999px;display:inline-block; }
+  .chip small{ font-weight:800; color: var(--muted); }
+
+  /* Leaflet */
+  .leaflet-control-attribution{ font-size: 11px; }
 </style>
 @endpush
 
 @section('content')
+<div class="page">
 
-<div class="page-title">
-  <div>
-    <h2>🗺️ Peta Titik Jemput Saya</h2>
-    <p>Lihat status setoran jemput + posisi petugas realtime (jika tracking aktif).</p>
-  </div>
-  <div class="row-flex" style="display:flex;gap:10px;flex-wrap:wrap">
-    <a class="btn" href="{{ route('user.dashboard') }}">⬅️ Dashboard</a>
-    <a class="btn" href="{{ route('user.setoran.index') }}">📦 Riwayat Setoran</a>
-  </div>
-</div>
-
-<div class="box">
-  <div class="toolbar">
-    <div class="muted" id="infoText">Memuat data...</div>
-
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <span class="muted">Filter status:</span>
-      <select id="statusFilter">
-        <option value="__all__">Semua</option>
-        <option value="pending">PENDING</option>
-        <option value="diambil">DIAMBIL</option>
-        <option value="selesai">SELESAI</option>
-        <option value="ditolak">DITOLAK</option>
-      </select>
+  {{-- HEADER --}}
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="header-inner">
+        <h2 class="title">
+          <i class="fa-solid fa-map-location-dot"></i>
+          Peta Titik Jemput Saya
+        </h2>
+        <p class="subtitle">
+          Lihat status setoran jemput & posisi petugas realtime (jika tracking aktif). Kamu bisa filter status untuk fokus ke setoran tertentu.
+        </p>
+      </div>
     </div>
   </div>
 
-  <div id="map"></div>
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-head">
+        <div class="muted">
+          <i class="fa-solid fa-circle-info"></i>
+          Monitoring jemput & tracking petugas.
+        </div>
+        <div class="actions">
+          <a class="btnx" href="{{ route('user.dashboard') }}">
+            <i class="fa-solid fa-house"></i> Dashboard
+          </a>
+          <a class="btnx btnx-soft" href="{{ route('user.setoran.index') }}">
+            <i class="fa-solid fa-clock-rotate-left"></i> Riwayat Setoran
+          </a>
+        </div>
+      </div>
 
-  <div class="legend">
-    <div class="chip"><span class="dot" style="background:#22c55e"></span>Titik Jemput Saya</div>
-    <div class="chip"><span class="dot" style="background:#f59e0b"></span>Pending</div>
-    <div class="chip"><span class="dot" style="background:#3b82f6"></span>Diambil</div>
-    <div class="chip"><span class="dot" style="background:#9ca3af"></span>Selesai</div>
-    <div class="chip"><span class="dot" style="background:#ef4444"></span>Ditolak</div>
-    <div class="chip">🚛 = posisi petugas realtime</div>
-    <div class="chip">🧭 = rute petugas → titik jemput</div>
+      <div class="content">
+
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <div class="info-pill" id="infoText">
+              <i class="fa-solid fa-spinner fa-spin"></i> Memuat data...
+            </div>
+            <div class="muted">
+              <i class="fa-solid fa-satellite-dish"></i> Update berkala
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <span class="muted"><i class="fa-solid fa-filter"></i> Filter status</span>
+            <select id="statusFilter" class="selectx">
+              <option value="__all__">Semua</option>
+              <option value="pending">PENDING</option>
+              <option value="diambil">DIAMBIL</option>
+              <option value="selesai">SELESAI</option>
+              <option value="ditolak">DITOLAK</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="legend">
+          <div class="chip"><span class="dot" style="background:#22c55e"></span> Titik Jemput</div>
+          <div class="chip"><span class="dot" style="background:#f59e0b"></span> Pending</div>
+          <div class="chip"><span class="dot" style="background:#3b82f6"></span> Diambil</div>
+          <div class="chip"><span class="dot" style="background:#9ca3af"></span> Selesai</div>
+          <div class="chip"><span class="dot" style="background:#ef4444"></span> Ditolak</div>
+          <div class="chip">🚛 <small>= posisi petugas</small></div>
+          <div class="chip">🧭 <small>= rute petugas → titik</small></div>
+        </div>
+
+      </div>
+    </div>
   </div>
 </div>
-
 @endsection
 
 @push('scripts')
@@ -167,17 +398,17 @@
       : `<div style="margin-top:6px"><b>ETA/Jarak:</b> -</div>`;
 
     return `
-      <div style="font-family:Arial;min-width:240px">
-        <b>Setoran #${it.id}</b><br>
+      <div style="font-family:Plus Jakarta Sans, Arial;min-width:250px">
+        <div style="font-weight:900;font-size:14px">Setoran #${it.id}</div>
         <div style="margin-top:6px"><b>Status:</b> ${s}</div>
         <div style="margin-top:6px"><b>Alamat:</b><br>${addr}</div>
         <div style="margin-top:6px"><b>Koordinat:</b> ${it.lat.toFixed(6)}, ${it.lng.toFixed(6)}</div>
         <div style="margin-top:6px"><b>Petugas:</b> ${petugasInfo}</div>
         <div style="margin-top:6px"><b>Last seen:</b> ${seen}</div>
         ${routePart}
-        <div style="margin-top:10px">
-          <a href="${detailUrlBase}/${it.id}" style="display:inline-block;padding:8px 10px;border:1px solid #333;border-radius:10px;text-decoration:none">Detail</a>
-          <a target="_blank" href="https://www.google.com/maps?q=${it.lat},${it.lng}" style="display:inline-block;padding:8px 10px;border:1px solid #0b6b4d;border-radius:10px;text-decoration:none;margin-left:6px">Maps</a>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <a href="${detailUrlBase}/${it.id}" style="display:inline-block;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px;text-decoration:none;font-weight:900;color:#111827;background:#fff">Detail</a>
+          <a target="_blank" href="https://www.google.com/maps?q=${it.lat},${it.lng}" style="display:inline-block;padding:8px 10px;border:1px solid rgba(16,185,129,.35);border-radius:10px;text-decoration:none;font-weight:900;color:#065f46;background:#ecfdf5">Maps</a>
         </div>
       </div>
     `;
@@ -214,9 +445,9 @@
 
     const movedEnough = !cache
       ? true
-      : (Math.abs(cache.fromLat - it.petugas_lat) + Math.abs(cache.fromLng - it.petugas_lng)) > 0.0002; // ~20m-ish
+      : (Math.abs(cache.fromLat - it.petugas_lat) + Math.abs(cache.fromLng - it.petugas_lng)) > 0.0002;
 
-    const timeEnough = !cache ? true : (now - cache.at) > 5000; // 5 detik
+    const timeEnough = !cache ? true : (now - cache.at) > 7000; // 7 detik (lebih ringan)
 
     if(!movedEnough && !timeEnough){
       return cache?.routeInfo ?? null;
@@ -250,8 +481,8 @@
       const data = await res.json();
       const items = data.items || [];
 
-      document.getElementById('infoText').textContent =
-        `Total titik jemput: ${items.length} • Realtime update`;
+      const info = document.getElementById('infoText');
+      info.innerHTML = `<i class="fa-solid fa-location-dot"></i> Total titik jemput: <b>${items.length}</b> • Realtime update`;
 
       let bounds = [];
       const alivePickup = new Set();
@@ -343,6 +574,8 @@
   document.getElementById('statusFilter').addEventListener('change', refresh);
 
   refresh();
-  setInterval(refresh, 1000);
+
+  // NOTE: 1 detik terlalu berat. 3 detik lebih aman untuk UX + server.
+  setInterval(refresh, 3000);
 </script>
 @endpush
